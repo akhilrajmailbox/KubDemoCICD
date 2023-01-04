@@ -1,6 +1,7 @@
 def DEPLOYMENT_ERR = ""
 def MY_NODE_LABEL = "SLAVES"
 def DOCKER_IMAGE_NAME = "akhilrajmailbox/httpd-demo"
+def FIRST_CLONE_BRANCH = "main"
 
 properties([
     buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '10')),
@@ -17,6 +18,22 @@ try {
         stage('Checkout SCM') {
             checkout scm
             RELEASE_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        }
+        stage('Trigger Jobs') {
+            JOB_NAMES = [
+                'KubDemoGreen',
+                'KubDemoBlue'
+            ]
+            for (myJobs in JOB_NAMES) {
+                dir(myJobs) {
+                    stage('Checkout Code') {
+                        git branch: FIRST_CLONE_BRANCH,
+                            credentialsId: '',
+                            url: "https://github.com/akhilrajmailbox/${myJobs}.git"
+                        sh "git checkout ${DEPLOY_BRANCH}"
+                    }
+                }
+            }
         }
     }
 } catch (err) {
